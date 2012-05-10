@@ -4,6 +4,7 @@
  * Vid.ly API
  */
 class VidlyAPI {
+
   public $api_user   = '';
   public $api_key    = '';
   public $notify_url = '';
@@ -64,6 +65,7 @@ class VidlyAPI {
   function userAndKeyAreValid() {
     // Send a safe request using bad data. The ErrorCode will indicate whether
     // the request failed because of invalid credentials or otherwise.
+    // Yes, this is hackish :-(.
     $this->getStatus(array('TEST'));
     return $this->errors->ErrorCode != '1.3';
   }
@@ -229,7 +231,7 @@ class VidlyAPI {
       $this->debug .= var_export($xml, 1) . "\n";
     }
 
-    // Buy ourselves 30 seconds for the cURL request and 10 seconds to process it
+    // Buy 30 seconds for the cURL request and 10 seconds to process it
     ini_set('max_execution_time', 40);
     $ch = curl_init($this->vidly_api_url);
     curl_setopt($ch, CURLOPT_POST, 1);
@@ -376,6 +378,7 @@ class VidlyAPI {
       );
     }
 
+    // Drupal specific debugging
     if (function_exists('variable_get') && variable_get('vidly_api_debug', FALSE)) {
       watchdog('VidlyAPI', "Debug: <pre>!debug</pre>", array('!debug' => htmlspecialchars($this->debug)));
     }
@@ -383,6 +386,12 @@ class VidlyAPI {
     return TRUE;
   }
 
+  /**
+   * Recursively flattens a SimpleXML object into a normal stdClass object.
+   *
+   * Note that this is a destructive operation as XML attributes are
+   * not preserved.
+   */
   function _simpleXMLToObject($xml, &$obj, $depth = 0) {
     if ($depth > 50) return;
 
@@ -402,7 +411,6 @@ class VidlyAPI {
       else {
         $next_node =& $obj->{$tag_name};;
       }
-
 
       if (!$children->getName()) {
         $next_node = (string) $node;
